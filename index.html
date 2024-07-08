@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Profitability Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #results {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Business Profitability Calculator</h1>
+    <form id="profitabilityForm">
+        <label for="dailyRentCost">Daily Rent Cost:</label>
+        <input type="number" id="dailyRentCost" required>
+
+        <label for="advertisingCostPerClient">Advertising Cost Per Client:</label>
+        <input type="number" id="advertisingCostPerClient" required>
+
+        <label for="minimumClientCheck">Minimum Client Check:</label>
+        <input type="number" id="minimumClientCheck" required>
+
+        <label for="clientsPerDay">Clients Per Day:</label>
+        <input type="number" id="clientsPerDay" required>
+
+        <button type="submit">Calculate</button>
+    </form>
+
+    <div id="results" class="hidden">
+        <h2>Results:</h2>
+        <p id="totalExpenses"></p>
+        <p id="totalDailyIncome"></p>
+        <p id="profitability"></p>
+        <p id="profitabilityPercentage"></p>
+        <p id="isTaxi"></p>
+        <h3>Best Parameter to Change:</h3>
+        <p id="bestParameter"></p>
+        <p id="increaseAmount"></p>
+        <p id="changeAmount"></p>
+    </div>
+
+    <script>
+        function calculateBusinessProfitability(dailyRentCost, advertisingCostPerClient, minimumClientCheck, clientsPerDay) {
+            const transferCost = 8;
+            const parkingCostPerClient = 18;
+            let totalParkingCost = parkingCostPerClient * clientsPerDay;
+            let totalDailyExpenses = dailyRentCost + transferCost;
+            let isTaxi = false;
+
+            if (totalParkingCost + transferCost > 40) {
+                totalParkingCost = 0;
+                totalDailyExpenses += 40;
+                isTaxi = true;
+            } else {
+                totalDailyExpenses += totalParkingCost;
+            }
+
+            const totalDailyIncome = minimumClientCheck * clientsPerDay;
+            const totalAdvertisingCosts = advertisingCostPerClient * clientsPerDay;
+            const totalExpenses = totalDailyExpenses + totalAdvertisingCosts;
+            const profitability = totalDailyIncome - totalExpenses;
+            const profitabilityPercentage = (profitability / totalExpenses) * 100;
+
+            return {
+                totalExpenses,
+                totalDailyIncome,
+                profitability,
+                profitabilityPercentage,
+                isTaxi
+            };
+        }
+
+        function determineBestParameterToChange(dailyRentCost, advertisingCostPerClient, minimumClientCheck, clientsPerDay) {
+            const baseProfitability = calculateBusinessProfitability(dailyRentCost, advertisingCostPerClient, minimumClientCheck, clientsPerDay).profitability;
+
+            const parameters = {
+                dailyRentCost: dailyRentCost - 10,
+                advertisingCostPerClient: advertisingCostPerClient - 1,
+                minimumClientCheck: minimumClientCheck + 10,
+                clientsPerDay: clientsPerDay + 1
+            };
+
+            const changes = {
+                dailyRentCost: -10,
+                advertisingCostPerClient: -1,
+                minimumClientCheck: +10,
+                clientsPerDay: +1
+            };
+
+            const profitabilityChanges = {};
+
+            for (const [param, value] of Object.entries(parameters)) {
+                const newValues = {
+                    dailyRentCost,
+                    advertisingCostPerClient,
+                    minimumClientCheck,
+                    clientsPerDay
+                };
+
+                newValues[param] = value;
+
+                const newProfitability = calculateBusinessProfitability(
+                    newValues.dailyRentCost,
+                    newValues.advertisingCostPerClient,
+                    newValues.minimumClientCheck,
+                    newValues.clientsPerDay
+                ).profitability;
+
+                profitabilityChanges[param] = newProfitability - baseProfitability;
+            }
+
+            const bestParameter = Object.keys(profitabilityChanges).reduce((a, b) =>
+                profitabilityChanges[a] > profitabilityChanges[b] ? a : b
+            );
+
+            return {
+                bestParameter,
+                increase: profitabilityChanges[bestParameter],
+                changeAmount: changes[bestParameter]
+            };
+        }
+
+        document.getElementById('profitabilityForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dailyRentCost = parseFloat(document.getElementById('dailyRentCost').value);
+            const advertisingCostPerClient = parseFloat(document.getElementById('advertisingCostPerClient').value);
+            const minimumClientCheck = parseFloat(document.getElementById('minimumClientCheck').value);
+            const clientsPerDay = parseFloat(document.getElementById('clientsPerDay').value);
+
+            const profitabilityData = calculateBusinessProfitability(dailyRentCost, advertisingCostPerClient, minimumClientCheck, clientsPerDay);
+            const bestParameterToChange = determineBestParameterToChange(dailyRentCost, advertisingCostPerClient, minimumClientCheck, clientsPerDay);
+
+            document.getElementById('totalExpenses').textContent = `Total Daily Expenses: ${profitabilityData.totalExpenses.toFixed(2)} zlotys`;
+            document.getElementById('totalDailyIncome').textContent = `Total Daily Income: ${profitabilityData.totalDailyIncome.toFixed(2)} zlotys`;
+            document.getElementById('profitability').textContent = `Net Daily Profitability: ${profitabilityData.profitability.toFixed(2)} zlotys`;
+            document.getElementById('profitabilityPercentage').textContent = `Net Profitability: ${profitabilityData.profitabilityPercentage.toFixed(2)}% relative to daily expenses`;
+            document.getElementById('isTaxi').textContent = profitabilityData.isTaxi ? 'It is cheaper to take a taxi' : '';
+
+            document.getElementById('bestParameter').textContent = `Best parameter to change: ${bestParameterToChange.bestParameter}`;
+            document.getElementById('increaseAmount').textContent = `Expected profitability increase: ${bestParameterToChange.increase.toFixed(2)} zlotys`;
+            document.getElementById('changeAmount').textContent = `Required parameter change: ${bestParameterToChange.changeAmount}`;
+
+            document.getElementById('results').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
